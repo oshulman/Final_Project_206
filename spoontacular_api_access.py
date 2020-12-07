@@ -12,6 +12,7 @@ import sqlite3
 # client_ID = "rkuo0PKmfif1pdFsWx3U1Q"
 API_KEY = "hKxIMdkKPpO81Uq7XqdeG7OB8Eq0TBDhVijsuWbkFguL8W-aR_c9gq3sWXZhZe1p5QEB-cLoRuimq-iW9yukU_KJsXtDC9NoSEkhALOgnTQibKi-3X2PJlRxABXLX3Yx"
 
+# WEBSCRAPING
 def scrape_100_top_cities():
     url = "https://worldpopulationreview.com/us-cities"
     r = requests.get(url)
@@ -30,6 +31,78 @@ def scrape_100_top_cities():
 
     return city_list
 
+# YELP API
+def read_cache(CACHE_FNAME):
+    """
+    This function reads from the JSON cache file and returns a dictionary from the cache data.
+    If the file doesn’t exist, it returns an empty dictionary.
+    """
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    CACHE_FNAME = dir_path + '/' + "cache_movie.json"
+    try:
+        cache_file = open(CACHE_FNAME, 'r', encoding="utf-8") # Try to read the data from the file
+        cache_contents = cache_file.read()  # If it's there, get it into a string
+        CACHE_DICTION = json.loads(cache_contents) # And then load it into a dictionary
+        cache_file.close() # Close the file, we're good, we got the data in a dictionary.
+        return CACHE_DICTION
+    except:
+        CACHE_DICTION = {}
+        return CACHE_DICTION
+
+def write_cache(cache_file, cache_dict):
+    """
+    This function encodes the cache dictionary (CACHE_DICT) into JSON format and
+    writes the JSON to the cache file (CACHE_FNAME) to save the search results.
+    """
+    with open(cache_file, 'w') as outfile:
+        json.dump(cache_dict, outfile)
+    
+    outfile.close()
+
+"""
+def get_data_with_caching(url, CACHE_FNAME):
+
+    cache_dict = read_cache(CACHE_FNAME)
+
+    if url in cache_dict:
+        print("Using cache for " + title)
+        return cache_dict[url]
+    else:
+        print("Fetching data for " + title)
+        try:
+            r = requests.get(url)
+            info = json.loads(r.text)
+            if info["Response"] == 'True':
+                cache_dict[url] = info
+                write_cache(CACHE_FNAME, cache_dict)
+            else:
+                print("Movie not found!")
+                return None
+        except:
+            print("Exception")
+            return None 
+"""
+
+def city_urls():
+    cities = scrape_100_top_cities()
+    url_list = []
+
+    for i in range(len(cities)):
+        parms = "healthy&location=" + cities[i]
+        url = "https://api.yelp.com/v3/businesses/search?term=" + parms
+        url_list.append(url)
+
+    
+    for url in url_list:
+        r = requests.get(url)
+        print(r.content)
+    
+
+    return 1
+
+
+
+# DATABASE
 def setUpDatabase(db_name):
     path = os.path.dirname(os.path.abspath(__file__))
     conn = sqlite3.connect(path+'/'+db_name)
@@ -49,7 +122,6 @@ def setUpCitiesTable(cur, conn):
 def main():
     cur, conn = setUpDatabase('cities.db')
     setUpCitiesTable(cur, conn)
-
     conn.close()
 
 class TestAllMethods(unittest.TestCase):
@@ -66,5 +138,6 @@ class TestAllMethods(unittest.TestCase):
 
 if __name__ == '__main__':
     # print(scrape_100_top_cities())
+    print(city_urls())
     main()
-    unittest.main(verbosity = 2)
+    #unittest.main(verbosity = 2)
