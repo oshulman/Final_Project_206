@@ -6,6 +6,9 @@ import os
 import requests
 import sqlite3
 from yelpapi import YelpAPI
+from arcgis.gis import GIS
+from arcgis.geoenrichment import *
+import pandas
 
 # Spoontacular API_KEY = "8cf1b23a038a4372835238e67ffd74ab"
 
@@ -99,23 +102,47 @@ def get_data_with_caching(url, CACHE_FNAME):
             return None 
 """
 
-def city_urls():
-    cities = scrape_100_top_cities()
-    url_list = []
+def arcgis_access_token():
+    url = "https://www.arcgis.com/sharing/rest/oauth2/token"
 
-    for i in range(len(cities)):
-        parms = "healthy&location=" + cities[i]
-        url = "https://api.yelp.com/v3/businesses/search?term=" + parms
-        url_list.append(url)
+    payload = "client_id=lZvP8DdtSqYLEqQk&client_secret=9fd0c24ece6741a5b2b2ef77ba2f86bd&grant_type=client_credentials"
+    headers = {
+        'content-type': "application/x-www-form-urlencoded",
+        'accept': "application/json",
+        'cache-control': "no-cache",
+        'postman-token': "11df29d1-17d3-c58c-565f-2ca4092ddf5f"
+    }
 
+    response = requests.request("POST", url, data=payload, headers=headers)
+
+    return response.text
+
+def arcgis_info():
+    gis = GIS('https://www.arcgis.com', 'oshulman', 'Hellogoo99!')
     
-    for url in url_list:
-        r = requests.get(url)
-        print(r.content)
+    usa = Country.get('US')
+    #ny = usa.search(query='New York', layers = ['US.Cities'])
+    #redlands = usa.area_id['122885']
+    #mi = usa.search(query='Riverside'
+    redlands = usa.subgeographies.states['California'].zip5['92373']
+    #return redlands.data_collections
+
+    #return len(usa.data_collections)
     
-
-    return 1
-
+    # figuring out data labels
+    
+    df = usa.data_collections
+    """
+    for item in df.index.unique():
+        print(item)
+    """
+    
+    #return 1
+    
+    return enrich(study_areas=[redlands], data_collections=['householdincome'])
+    #return df.loc['householdincome']['analysisVariable'].unique()
+    #return df.loc['householdincome']['householdincome.AVGHINC_CY']
+    #return df.loc['householdincome'].columns()
 
 
 # DATABASE
@@ -143,7 +170,7 @@ def setUpRestaurantsTable(cur, conn):
     cur.execute("DROP TABLE IF EXISTS Restaurant")
     cur.execute("CREATE TABLE Restaurant (id INTEGER PRIMARY KEY, cities_id INTEGER, num_of_healthy_place INTEGER")
 
-    for i in range(len(restaurants))):
+    for i in range(len(restaurants)):
         cur.execute("INSERT INTO Restaurant (id, cities_id, num_of_healthy_place ) VALUES (?, ?, ?)", (i, cities[i]))
     conn.commit()
     pass
@@ -169,6 +196,7 @@ class TestAllMethods(unittest.TestCase):
 
 if __name__ == '__main__':
     # print(scrape_100_top_cities())
-    print(city_urls())
+    # print(city_urls())
+    #print(arcgis_info())
     main()
     #unittest.main(verbosity = 2)
