@@ -6,9 +6,11 @@ import os
 import requests
 import sqlite3
 from yelpapi import YelpAPI
+'''
 from arcgis.gis import GIS
 from arcgis.geoenrichment import *
 import pandas
+'''
 
 # Spoontacular API_KEY = "8cf1b23a038a4372835238e67ffd74ab"
 
@@ -166,20 +168,23 @@ def setUpCitiesTable(cur, conn):
 #cities id can be the shared key
 def setUpRestaurantsTable(cur, conn):
     restaurants = scrape_healthy_restaurants()
+    cur.execute("SELECT * FROM Cities")
+    cities_list = cur.fetchall()
+    print(cities_list)
+    
 
-    cur.execute("DROP TABLE IF EXISTS Restaurant")
-    cur.execute("CREATE TABLE Restaurant (id INTEGER PRIMARY KEY, cities_id INTEGER, num_of_healthy_place INTEGER")
+    cur.execute("DROP TABLE IF EXISTS Restaurants")
+    cur.execute("CREATE TABLE Restaurants (id INTEGER PRIMARY KEY, cities_id INTEGER, num_of_healthy_place INTEGER)")
 
     for i in range(len(restaurants)):
-        cur.execute("INSERT INTO Restaurant (id, cities_id, num_of_healthy_place ) VALUES (?, ?, ?)", (i, cities[i]))
+        cur.execute("INSERT INTO Restaurants (id, cities_id, num_of_healthy_place) VALUES (?, ?, ?)", (i, cities_list[i][0], restaurants[cities_list[i][1]]))
     conn.commit()
-    pass
     
 
 def main():
     cur, conn = setUpDatabase('cities.db')
     setUpCitiesTable(cur, conn)
-    print(scrape_healthy_restaurants())
+    setUpRestaurantsTable(cur, conn)
     conn.close()
 
 class TestAllMethods(unittest.TestCase):
@@ -193,6 +198,10 @@ class TestAllMethods(unittest.TestCase):
         cities_list = self.cur.fetchall()
         self.assertEqual(len(cities_list), 100)
         self.assertEqual(len(cities_list[0]), 2)
+    def test_restuarants_table(self):
+        self.cur.execute('SELECT num_of_healthy_place FROM Restaurants')
+        restaurants_list = self.cur.fetchall()
+        self.assertEqual(len(restaurants_list), 100)
 
 if __name__ == '__main__':
     # print(scrape_100_top_cities())
