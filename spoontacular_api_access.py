@@ -158,14 +158,13 @@ def top_cities_data():
 
     data_tup_list = []
     for element in table_body.find_all('tr'):
-        if int(str(element.td.text)) <= 25:
-            city = element.td.find_next_sibling('td').text
-            state = element.td.find_next_sibling('td').find_next_sibling('td').a.text
-            pop = element.td.find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').text
-            pop_change = element.td.find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').span.text
-            density = element.td.find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').text
-            area = element.td.find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').text
-            data_tup_list.append((city, state, pop, pop_change, density, area))
+        city = element.td.find_next_sibling('td').text
+        state = element.td.find_next_sibling('td').find_next_sibling('td').a.text
+        pop = element.td.find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').text
+        pop_change = element.td.find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').span.text
+        density = element.td.find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').text
+        area = element.td.find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').text
+        data_tup_list.append((city, state, pop, pop_change, density, area))
 
     return data_tup_list
 
