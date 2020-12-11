@@ -147,6 +147,29 @@ def arcgis_info():
     #return df.loc['householdincome'].columns()
 
 
+# NEW POTENTIAL PLAN: Scrape from 100 top cities website with more info and then compare with that
+# potential variables: city budget, party type of mayor, population density, population change, area
+def top_cities_data():
+    url = "https://worldpopulationreview.com/us-cities"
+    r = requests.get(url)
+    soup = BeautifulSoup(r.content, 'html.parser')
+    
+    table_body = soup.find('tbody', class_='jsx-2642336383')
+
+    data_tup_list = []
+    for element in table_body.find_all('tr'):
+        if int(str(element.td.text)) <= 25:
+            city = element.td.find_next_sibling('td').text
+            state = element.td.find_next_sibling('td').find_next_sibling('td').a.text
+            pop = element.td.find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').text
+            pop_change = element.td.find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').span.text
+            density = element.td.find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').text
+            area = element.td.find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').text
+            data_tup_list.append((city, state, pop, pop_change, density, area))
+
+    return data_tup_list
+
+
 # DATABASE
 def setUpDatabase(db_name):
     path = os.path.dirname(os.path.abspath(__file__))
