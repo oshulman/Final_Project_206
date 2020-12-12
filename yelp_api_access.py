@@ -5,29 +5,11 @@ import re
 import os
 import requests
 import sqlite3
-#from yelpapi import YelpAPI
+from yelpapi import YelpAPI
 
 # Yelp
 # client_ID = "rkuo0PKmfif1pdFsWx3U1Q"
 API_KEY = "hKxIMdkKPpO81Uq7XqdeG7OB8Eq0TBDhVijsuWbkFguL8W-aR_c9gq3sWXZhZe1p5QEB-cLoRuimq-iW9yukU_KJsXtDC9NoSEkhALOgnTQibKi-3X2PJlRxABXLX3Yx"
-
-# YELP API
-#scrape number of restaurants that have key word "healthy", return a dictionary ex {'New York':100}
-def scrape_healthy_restaurants():
-    city_list = []
-    for tup in top_cities_data():
-        city_list.append(tup[0])
-
-    yelp_api = YelpAPI(API_KEY)
-    healthy_restuarants_dict = {}
-
-    #get restaurants with key word "healthy in each city
-    for city in city_list:
-        search_results = yelp_api.search_query(term = 'healthy', location = city)
-        healthy_restuarants_dict[city] = search_results["total"]
-    
-    return(healthy_restuarants_dict)
-
 
 # WEBSCRAPING
 
@@ -66,39 +48,98 @@ def setUpDatabase(db_name):
     cur = conn.cursor()
     return cur, conn
 
+#Table for list of city and its id
 def setUpCitiesTable(cur, conn):
     cities = top_cities_data()
 
-    cur.execute("DROP TABLE IF EXISTS Cities")
-    cur.execute("CREATE TABLE Cities (id INTEGER PRIMARY KEY, city TEXT, state TEXT, pop INTEGER, pop_change REAL, pop_density INTEGER, area INTEGER)")
+    #cur.execute("DROP TABLE IF EXISTS Cities")
+    cur.execute("CREATE TABLE IF NOT EXISTS Cities (cities_id INTEGER PRIMARY KEY, city TEXT)")
+
+    count = 0
 
     for i in range(len(cities)):
-        cur.execute("INSERT INTO Cities (id, city, state, pop, pop_change, pop_density, area) VALUES (?, ?, ?, ?, ?, ?, ?)", (i, cities[i][0], cities[i][1], cities[i][2], cities[i][3], cities[i][4], cities[i][5]))
+        #check if the data already exists
+        cur.execute("SELECT cities_id FROM Cities WHERE cities_id = " + str(i))
+        list_test = cur.fetchall()
+        #if not, add the data to database
+        if list_test == [] and count < 25:
+            cur.execute("INSERT INTO Cities (cities_id, city) VALUES (?, ?)", (i, cities[i][0]))
+            count = count + 1
+    
+    conn.commit()
+
+#Table for city data, using cities_id as shared key (same api as Cities)
+def setUpCitiesDataTable(cur, conn):
+    cities = top_cities_data()
+
+    #cur.execute("DROP TABLE IF EXISTS Cities_Data")
+    cur.execute("CREATE TABLE IF NOT EXISTS Cities_Data (cities_id INTEGER PRIMARY KEY, state TEXT, pop INTEGER, pop_change REAL, pop_density INTEGER, area INTEGER)")
+
+    #keep track of how many data we have already at in database/execution
+    count = 0
+
+    for i in range(len(cities)):
+        #check if the data already exists
+        cur.execute("SELECT cities_id FROM Cities_Data WHERE cities_id = " + str(i))
+        list_test = cur.fetchall()
+        #if not, add the data to database
+        if list_test == [] and count < 25:
+            cur.execute("SELECT cities_id FROM Cities WHERE cities_id = " + str(i))
+            list_id = cur.fetchall()
+            cur.execute("INSERT INTO Cities_Data (cities_id, state, pop, pop_change, pop_density, area) VALUES (?, ?, ?, ?, ?, ?)", (list_id[0][0], cities[i][1], cities[i][2], cities[i][3], cities[i][4], cities[i][5]))
+            count = count + 1
+
     conn.commit()
 
 
 #set up food table
+#WEBSCRAPPING YELP API + DATABASE
 #cities id can be the shared key
+#scrape and insert data into database, 25/ per execution
+#stop scraping after the database has 100 data
+
 def setUpRestaurantsTable(cur, conn):
-    restaurants = scrape_healthy_restaurants()
+
+    #cur.execute("DROP TABLE IF EXISTS Restaurants")
+    cur.execute("CREATE TABLE IF NOT EXISTS Restaurants (cities_id INTEGER PRIMARY KEY, num_of_healthy_place INTEGER)")
+    
+    conn.commit()
+    #get list of tuple of city data from existing data base
     cur.execute("SELECT * FROM Cities")
     cities_list = cur.fetchall()
-    print(cities_list)
+
+    yelp_api = YelpAPI(API_KEY)
+
+    #keep track of how many data we have already inserted
+    count = 0
+
+    #get restaurants with key word "healthy in each city
+    for i in range(len(cities_list)):
+
+        #determine if the data is already in the database
+        cur.execute("SELECT cities_id FROM Restaurants WHERE cities_id = " + str(cities_list[i][0]))
+        list_test = cur.fetchall()
+        #if not, add the data to database
+        if list_test == [] and count < 25:
+            city = cities_list[i][1]
+
+            #scrape number of restaurants that have key word "healthy" in that city 
+            search_results = yelp_api.search_query(term = 'healthy', location = city)
+            cur.execute("INSERT INTO Restaurants (cities_id, num_of_healthy_place) VALUES (?, ?)", (cities_list[i][0], search_results["total"]))
+            count = count + 1
     
-
-    cur.execute("DROP TABLE IF EXISTS Restaurants")
-    cur.execute("CREATE TABLE Restaurants (id INTEGER PRIMARY KEY, cities_id INTEGER, num_of_healthy_place INTEGER)")
-
-    for i in range(len(restaurants)):
-        cur.execute("INSERT INTO Restaurants (id, cities_id, num_of_healthy_place) VALUES (?, ?, ?)", (i, cities_list[i][0], restaurants[cities_list[i][1]]))
     conn.commit()
+
 
 
 def main():
     cur, conn = setUpDatabase('cities.db')
     setUpCitiesTable(cur, conn)
+    setUpCitiesDataTable(cur, conn)
     setUpRestaurantsTable(cur, conn)
+
     conn.close()
+
 
 class TestAllMethods(unittest.TestCase):
     def setUp(self):
