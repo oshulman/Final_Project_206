@@ -31,7 +31,7 @@ def top_cities_data():
             pop = element.td.find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').text.replace(",","")
             pop_change = element.td.find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').span.text.replace("%","")
             density = element.td.find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').text.replace(",","")
-            area = element.td.find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').text
+            area = element.td.find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').text.replace(",","")
             data_tup_list.append((city, state, pop, pop_change, density, area))
 
     
@@ -272,7 +272,7 @@ def area_pearson_corr(cur, conn):
     # sample size = 100 cities
     n = 100
 
-    for tup in pop_num_tup_list:
+    for tup in area_num_tup_list:
         x_total += tup[0]
         y_total += tup[1]
         xy_total += (tup[0] * tup[1])
@@ -282,6 +282,15 @@ def area_pearson_corr(cur, conn):
     r = ((n * xy_total) - (x_total * y_total)) / (math.sqrt(((n * x2_total) - (x_total * x_total)) * ((n * y2_total) - (y_total * y_total))))
 
     return r
+
+def write_calcs_to_file(cur, conn):
+    calc_file = open("yelp_calcs.txt", "w")
+    calc_file.write(avg_num_healthy_restaurants(cur, conn))
+    calc_file.write(pop_pearson_corr(cur, conn))
+    calc_file.write(pop_dens_pearson_corr(cur, conn))
+    calc_file.write(pop_change_pearson_corr(cur, conn))
+    calc_file.write(area_pearson_corr(cur, conn))
+    calc_file.close()
 
 def main():
     cur, conn = setUpDatabase('cities.db')
@@ -293,7 +302,7 @@ def main():
     pop_change_pearson_corr(cur, conn)
     pop_dens_pearson_corr(cur, conn)
     area_pearson_corr(cur, conn)
-
+    write_calcs_to_file(cur, conn)
     conn.close()
 
 
@@ -308,15 +317,36 @@ class TestAllMethods(unittest.TestCase):
         cities_list = self.cur.fetchall()
         self.assertEqual(len(cities_list), 100)
         self.assertEqual(len(cities_list[0]), 2)
+
     def test_restuarants_table(self):
         self.cur.execute('SELECT num_of_healthy_place FROM Restaurants')
         restaurants_list = self.cur.fetchall()
         self.assertEqual(len(restaurants_list), 100)
+
+    def test_avg_num_healthy_restaurants(self):
+        avg = avg_num_healthy_restaurants(self.cur, self.conn)
+        self.assertEqual(avg, 601.56)
+
+    def test_pop_pearson_corr(self):
+        pop_corr = pop_pearson_corr(self.cur, self.conn)
+        self.assertTrue(pop_corr > 0.7 and pop_corr < 0.71)
+
+    def test_pop_change_pearson_corr(self):
+        pop_change_corr = pop_change_pearson_corr(self.cur, self.conn)
+        self.assertTrue(pop_change_corr > 0.06 and pop_change_corr < 0.062)
+
+    def test_pop_dens_pearson_corr(self):
+        pop_dens_corr = pop_dens_pearson_corr(self.cur, self.conn)
+        self.assertTrue(pop_dens_corr > 0.61 and pop_dens_corr < 0.62)
+
+    def test_area_pearson_corr(self):
+        area_corr = area_pearson_corr(self.cur, self.conn)
+        self.assertTrue(area_corr > 0 and area_corr < 1)
 
 if __name__ == '__main__':
     # print(scrape_100_top_cities())
     # print(city_urls())
     #print(arcgis_info())
     #print(top_cities_data())
-    main()
-    #unittest.main(verbosity = 2)
+    # main()
+    unittest.main(verbosity = 2)
