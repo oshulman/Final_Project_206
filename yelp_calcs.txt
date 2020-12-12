@@ -1,0 +1,4 @@
+Average number of restaurants with keyword "healthy": 601.56
+Correlation coefficient of the number of healthy restaurants and city population: 0.7079585074385438
+Correlation coefficient of the number of healthy restaurants and population density: 0.6193717506623636
+Correlation coefficient of the number of healthy restaurants and percent population change from 2010 to 2020: 0.061698702353767135

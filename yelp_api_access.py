@@ -6,7 +6,7 @@ import os
 import requests
 import sqlite3
 import math
-from yelpapi import YelpAPI
+#from yelpapi import YelpAPI
 
 # Yelp
 # client_ID = "rkuo0PKmfif1pdFsWx3U1Q"
@@ -33,11 +33,6 @@ def top_cities_data():
             density = element.td.find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').text.replace(",","")
             area = element.td.find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').text.replace(",","")
             data_tup_list.append((city, state, pop, pop_change, density, area))
-
-    
-    for tup in data_tup_list:
-        for element in tup:
-            element = element.strip(',%')
 
     return data_tup_list
 
@@ -285,11 +280,11 @@ def area_pearson_corr(cur, conn):
 
 def write_calcs_to_file(cur, conn):
     calc_file = open("yelp_calcs.txt", "w")
-    calc_file.write(avg_num_healthy_restaurants(cur, conn))
-    calc_file.write(pop_pearson_corr(cur, conn))
-    calc_file.write(pop_dens_pearson_corr(cur, conn))
-    calc_file.write(pop_change_pearson_corr(cur, conn))
-    calc_file.write(area_pearson_corr(cur, conn))
+    calc_file.write("Average number of restaurants with keyword \"healthy\": " + str(avg_num_healthy_restaurants(cur, conn)) + "\n")
+    calc_file.write("Correlation coefficient of the number of healthy restaurants and city population: " + str(pop_pearson_corr(cur, conn)) + "\n")
+    calc_file.write("Correlation coefficient of the number of healthy restaurants and population density: " + str(pop_dens_pearson_corr(cur, conn)) + "\n")
+    calc_file.write("Correlation coefficient of the number of healthy restaurants and percent population change from 2010 to 2020: " + str(pop_change_pearson_corr(cur, conn)) + "\n")
+    calc_file.write("Correlation coefficient of the number of healthy restaurants and city area (sq. mi)" + str(area_pearson_corr(cur, conn)) + "\n")
     calc_file.close()
 
 def main():
@@ -342,11 +337,14 @@ class TestAllMethods(unittest.TestCase):
     def test_area_pearson_corr(self):
         area_corr = area_pearson_corr(self.cur, self.conn)
         self.assertTrue(area_corr > 0 and area_corr < 1)
+    
+    def test_write_calcs_to_file(self):
+        write_calcs_to_file(self.cur, self.conn)
 
 if __name__ == '__main__':
     # print(scrape_100_top_cities())
     # print(city_urls())
     #print(arcgis_info())
     #print(top_cities_data())
-    main()
+    #main()
     unittest.main(verbosity = 2)
