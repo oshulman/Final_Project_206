@@ -348,5 +348,5 @@ if __name__ == '__main__':
     # print(city_urls())
     #print(arcgis_info())
     #print(top_cities_data())
-    # main()
+    main()
     unittest.main(verbosity = 2)
