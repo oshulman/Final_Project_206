@@ -5,6 +5,7 @@ import re
 import os
 import requests
 import sqlite3
+import math
 from yelpapi import YelpAPI
 
 # Yelp
@@ -130,13 +131,168 @@ def setUpRestaurantsTable(cur, conn):
     
     conn.commit()
 
+def avg_num_healthy_restaurants(cur, conn):
+    num_tup_list = []
+    for row in cur.execute("SELECT num_of_healthy_place FROM Restaurants"):
+        num_tup_list.append(row)
+    conn.commit()
 
+    total = 0
+    for tup in num_tup_list:
+        total += tup[0]
+    
+    return total/50
+
+def pop_dens_pearson_corr(cur, conn):
+    pop_dens_num_tup_list = []
+    ex_str = """SELECT Cities_Data.pop_density, Restaurants.num_of_healthy_place 
+        FROM Cities_Data JOIN Restaurants ON Cities_Data.cities_id = Restaurants.cities_id 
+        """
+    for row in cur.execute(ex_str):
+        pop_dens_num_tup_list.append(row)
+    conn.commit()
+
+    # uses pearson summation formula from https://www.statisticshowto.com/probability-and-statistics/correlation-coefficient-formula/
+
+    # summation of all pop_density values
+    x_total = 0
+    # summation of all num_of_healthy_place values
+    y_total = 0
+    # summation of all pop_density * num_of_healthy_place 
+    xy_total = 0
+    # summation of all squares of pop_density values
+    x2_total = 0
+    # summation of all squares of num_of_healthy_place values
+    y2_total = 0
+    # sample size
+    n = 100
+
+    for tup in pop_dens_num_tup_list:
+        x_total += tup[0]
+        y_total += tup[1]
+        xy_total += (tup[0] * tup[1])
+        x2_total += (tup[0] * tup[0])
+        y2_total += (tup[1] * tup[1])
+    
+    r = ((n * xy_total) - (x_total * y_total))/(math.sqrt(((n * x2_total) - (x_total * x_total)) * ((n * y2_total) - (y_total * y_total))))
+
+    return r
+
+def pop_pearson_corr(cur, conn):
+    pop_num_tup_list = []
+    ex_str = """SELECT Cities_Data.pop, Restaurants.num_of_healthy_place 
+        FROM Cities_Data JOIN Restaurants ON Cities_Data.cities_id = Restaurants.cities_id 
+        """
+    for row in cur.execute(ex_str):
+        pop_num_tup_list.append(row)
+    conn.commit()
+
+        # uses pearson summation formula from https://www.statisticshowto.com/probability-and-statistics/correlation-coefficient-formula/
+
+    # summation of all pop values
+    x_total = 0
+    # summation of all num_of_healthy_place values
+    y_total = 0
+    # summation of all pop * num_of_healthy_place 
+    xy_total = 0
+    # summation of all squares of pop values
+    x2_total = 0
+    # summation of all squares of num_of_healthy_place values
+    y2_total = 0
+    # sample size = 100 cities
+    n = 100
+
+    for tup in pop_num_tup_list:
+        x_total += tup[0]
+        y_total += tup[1]
+        xy_total += (tup[0] * tup[1])
+        x2_total += (tup[0] * tup[0])
+        y2_total += (tup[1] * tup[1])
+    
+    r = ((n * xy_total) - (x_total * y_total)) / (math.sqrt(((n * x2_total) - (x_total * x_total)) * ((n * y2_total) - (y_total * y_total))))
+
+    return r
+
+def pop_change_pearson_corr(cur, conn):
+    pop_change_tup_list = []
+    ex_str = """SELECT Cities_Data.pop_change, Restaurants.num_of_healthy_place 
+        FROM Cities_Data JOIN Restaurants ON Cities_Data.cities_id = Restaurants.cities_id 
+        """
+    for row in cur.execute(ex_str):
+        pop_change_tup_list.append(row)
+    conn.commit()
+
+        # uses pearson summation formula from https://www.statisticshowto.com/probability-and-statistics/correlation-coefficient-formula/
+
+    # summation of all pop_change values
+    x_total = 0
+    # summation of all num_of_healthy_place values
+    y_total = 0
+    # summation of all pop_change * num_of_healthy_place 
+    xy_total = 0
+    # summation of all squares of pop_change values
+    x2_total = 0
+    # summation of all squares of num_of_healthy_place values
+    y2_total = 0
+    # sample size = 100 cities
+    n = 100
+
+    for tup in pop_change_tup_list:
+        x_total += tup[0]
+        y_total += tup[1]
+        xy_total += (tup[0] * tup[1])
+        x2_total += (tup[0] * tup[0])
+        y2_total += (tup[1] * tup[1])
+    
+    r = ((n * xy_total) - (x_total * y_total)) / (math.sqrt(((n * x2_total) - (x_total * x_total)) * ((n * y2_total) - (y_total * y_total))))
+
+    return r
+
+def area_pearson_corr(cur, conn):
+    area_num_tup_list = []
+    ex_str = """SELECT Cities_Data.area, Restaurants.num_of_healthy_place 
+        FROM Cities_Data JOIN Restaurants ON Cities_Data.cities_id = Restaurants.cities_id 
+        """
+    for row in cur.execute(ex_str):
+        area_num_tup_list.append(row)
+    conn.commit()
+
+        # uses pearson summation formula from https://www.statisticshowto.com/probability-and-statistics/correlation-coefficient-formula/
+
+    # summation of all area values
+    x_total = 0
+    # summation of all num_of_healthy_place values
+    y_total = 0
+    # summation of all area * num_of_healthy_place 
+    xy_total = 0
+    # summation of all squares of area values
+    x2_total = 0
+    # summation of all squares of num_of_healthy_place values
+    y2_total = 0
+    # sample size = 100 cities
+    n = 100
+
+    for tup in pop_num_tup_list:
+        x_total += tup[0]
+        y_total += tup[1]
+        xy_total += (tup[0] * tup[1])
+        x2_total += (tup[0] * tup[0])
+        y2_total += (tup[1] * tup[1])
+    
+    r = ((n * xy_total) - (x_total * y_total)) / (math.sqrt(((n * x2_total) - (x_total * x_total)) * ((n * y2_total) - (y_total * y_total))))
+
+    return r
 
 def main():
     cur, conn = setUpDatabase('cities.db')
     setUpCitiesTable(cur, conn)
     setUpCitiesDataTable(cur, conn)
     setUpRestaurantsTable(cur, conn)
+    avg_num_healthy_restaurants(cur,conn)
+    pop_pearson_corr(cur, conn)
+    pop_change_pearson_corr(cur, conn)
+    pop_dens_pearson_corr(cur, conn)
+    area_pearson_corr(cur, conn)
 
     conn.close()
 
