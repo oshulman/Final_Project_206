@@ -5,7 +5,7 @@ import re
 import os
 import requests
 import sqlite3
-from yelpapi import YelpAPI
+#from yelpapi import YelpAPI
 
 # Yelp
 # client_ID = "rkuo0PKmfif1pdFsWx3U1Q"
@@ -45,11 +45,16 @@ def top_cities_data():
         if int(str(element.td.text)) <= 100:
             city = element.td.find_next_sibling('td').text
             state = element.td.find_next_sibling('td').find_next_sibling('td').a.text
-            pop = element.td.find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').text
-            pop_change = element.td.find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').span.text
-            density = element.td.find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').text
+            pop = element.td.find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').text.replace(",","")
+            pop_change = element.td.find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').span.text.replace("%","")
+            density = element.td.find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').text.replace(",","")
             area = element.td.find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').find_next_sibling('td').text
             data_tup_list.append((city, state, pop, pop_change, density, area))
+
+    
+    for tup in data_tup_list:
+        for element in tup:
+            element = element.strip(',%')
 
     return data_tup_list
 
@@ -62,15 +67,16 @@ def setUpDatabase(db_name):
     return cur, conn
 
 def setUpCitiesTable(cur, conn):
-    cities = scrape_100_top_cities()
+    cities = top_cities_data()
 
     cur.execute("DROP TABLE IF EXISTS Cities")
-    cur.execute("CREATE TABLE Cities (id INTEGER PRIMARY KEY, Name TEXT)")
+    cur.execute("CREATE TABLE Cities (id INTEGER PRIMARY KEY, city TEXT, state TEXT, pop INTEGER, pop_change REAL, pop_density INTEGER, area INTEGER)")
 
     for i in range(len(cities)):
-        cur.execute("INSERT INTO Cities (id, Name) VALUES (?, ?)", (i, cities[i]))
+        cur.execute("INSERT INTO Cities (id, city, state, pop, pop_change, pop_density, area) VALUES (?, ?, ?, ?, ?, ?, ?)", (i, cities[i][0], cities[i][1], cities[i][2], cities[i][3], cities[i][4], cities[i][5]))
     conn.commit()
-    
+
+
 #set up food table
 #cities id can be the shared key
 def setUpRestaurantsTable(cur, conn):
@@ -86,7 +92,7 @@ def setUpRestaurantsTable(cur, conn):
     for i in range(len(restaurants)):
         cur.execute("INSERT INTO Restaurants (id, cities_id, num_of_healthy_place) VALUES (?, ?, ?)", (i, cities_list[i][0], restaurants[cities_list[i][1]]))
     conn.commit()
-    
+
 
 def main():
     cur, conn = setUpDatabase('cities.db')
@@ -114,5 +120,6 @@ if __name__ == '__main__':
     # print(scrape_100_top_cities())
     # print(city_urls())
     #print(arcgis_info())
+    #print(top_cities_data())
     main()
     #unittest.main(verbosity = 2)
