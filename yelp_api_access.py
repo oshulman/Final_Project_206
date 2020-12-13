@@ -286,7 +286,7 @@ def write_calcs_to_file(cur, conn):
     calc_file.write("Correlation coefficient of the number of healthy restaurants and city population: " + str(pop_pearson_corr(cur, conn)) + "\n")
     calc_file.write("Correlation coefficient of the number of healthy restaurants and population density: " + str(pop_dens_pearson_corr(cur, conn)) + "\n")
     calc_file.write("Correlation coefficient of the number of healthy restaurants and percent population change from 2010 to 2020: " + str(pop_change_pearson_corr(cur, conn)) + "\n")
-    calc_file.write("Correlation coefficient of the number of healthy restaurants and city area (sq. mi)" + str(area_pearson_corr(cur, conn)) + "\n")
+    calc_file.write("Correlation coefficient of the number of healthy restaurants and city area (sq. mi): " + str(area_pearson_corr(cur, conn)) + "\n")
     calc_file.close()
 
 #Graph
@@ -314,11 +314,31 @@ def PopDenCorrelationGraph(cur, conn):
 
     df = pd.DataFrame(dict(num_of_healthy_restaurants=num_of_healthy_list, population_density=pop_density_list))
 
-    fig = px.scatter(df, x="population_density", y="num_of_healthy_restaurants", title="Population Density vs Number of Healthy Restaurnats(in a city) Graph",color_discrete_sequence=px.colors.qualitative.Pastel, trendline="ols")
+    fig = px.scatter(df, x="Population density", y="Number of healthy restaurants", title="Population Density vs Number of Healthy Restaurants in 100 Most Populous US Cities",color_discrete_sequence=px.colors.qualitative.Pastel, trendline="ols")
 
     fig.show()
     
+def pop_corr_graph(cur, conn):
 
+    cur.execute("SELECT num_of_healthy_place FROM Restaurants")
+    num_of_healthy_tup_list = cur.fetchall()
+
+    num_of_healthy_list = []
+    for tup in num_of_healthy_tup_list:
+        num_of_healthy_list.append(tup[0])
+
+    cur.execute("SELECT pop FROM Cities_Data")
+    pop_tup_list = cur.fetchall()
+
+    pop_list = []
+    for tup in pop_tup_list:
+        pop_list.append(tup[0])
+
+    df = pd.DataFrame(dict(num_of_healthy_restaurants=num_of_healthy_list, population_density=pop_density_list))
+
+    fig = px.scatter(df, x="Population", y="Number of healthy restaurants", title="Population vs Number of Healthy Restaurants in 100 Most Populous US Cities",color_discrete_sequence=px.colors.qualitative.Pastel, trendline="ols")
+
+    fig.show()
 
 
 def main():
@@ -375,11 +395,17 @@ class TestAllMethods(unittest.TestCase):
     
     def test_write_calcs_to_file(self):
         write_calcs_to_file(self.cur, self.conn)
+    
+    def test_pop_den_corr_graph(self):
+        PopDenCorrelationGraph(self.cur, self.conn)
+
+    def test_pop_corr_graph(self):
+        pop_corr_graph(self.cur, self.conn)
 
 if __name__ == '__main__':
     # print(scrape_100_top_cities())
     # print(city_urls())
     #print(arcgis_info())
     #print(top_cities_data())
-    main()
-    #unittest.main(verbosity = 2)
+    #main()
+    unittest.main(verbosity = 2)
