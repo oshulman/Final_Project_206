@@ -6,7 +6,9 @@ import os
 import requests
 import sqlite3
 import math
-#from yelpapi import YelpAPI
+import plotly.express as px
+import pandas as pd
+from yelpapi import YelpAPI
 
 # Yelp
 # client_ID = "rkuo0PKmfif1pdFsWx3U1Q"
@@ -287,6 +289,38 @@ def write_calcs_to_file(cur, conn):
     calc_file.write("Correlation coefficient of the number of healthy restaurants and city area (sq. mi)" + str(area_pearson_corr(cur, conn)) + "\n")
     calc_file.close()
 
+#Graph
+
+#Population correlation Graph
+
+#Population Density vs num of healthy restaurants correlation Graph
+#scatter plot with linear trendline 
+def PopDenCorrelationGraph(cur, conn): 
+    
+    cur.execute("SELECT num_of_healthy_place FROM Restaurants")
+    num_of_healthy_tup_list = cur.fetchall()
+
+    num_of_healthy_list = []
+    for tup in num_of_healthy_tup_list:
+        num_of_healthy_list.append(tup[0])
+
+
+    cur.execute("SELECT pop_density FROM Cities_Data")
+    pop_density_tup_list = cur.fetchall()
+
+    pop_density_list = []
+    for tup in pop_density_tup_list:
+        pop_density_list.append(tup[0])
+
+    df = pd.DataFrame(dict(num_of_healthy_restaurants=num_of_healthy_list, population_density=pop_density_list))
+
+    fig = px.scatter(df, x="population_density", y="num_of_healthy_restaurants", title="Population Density vs Number of Healthy Restaurnats(in a city) Graph",color_discrete_sequence=px.colors.qualitative.Pastel, trendline="ols")
+
+    fig.show()
+    
+
+
+
 def main():
     cur, conn = setUpDatabase('cities.db')
     setUpCitiesTable(cur, conn)
@@ -298,6 +332,7 @@ def main():
     pop_dens_pearson_corr(cur, conn)
     area_pearson_corr(cur, conn)
     write_calcs_to_file(cur, conn)
+    PopDenCorrelationGraph(cur, conn)
     conn.close()
 
 
@@ -320,7 +355,7 @@ class TestAllMethods(unittest.TestCase):
 
     def test_avg_num_healthy_restaurants(self):
         avg = avg_num_healthy_restaurants(self.cur, self.conn)
-        self.assertEqual(avg, 601.56)
+        self.assertEqual(avg, 601.86)
 
     def test_pop_pearson_corr(self):
         pop_corr = pop_pearson_corr(self.cur, self.conn)
@@ -346,5 +381,5 @@ if __name__ == '__main__':
     # print(city_urls())
     #print(arcgis_info())
     #print(top_cities_data())
-    #main()
-    unittest.main(verbosity = 2)
+    main()
+    #unittest.main(verbosity = 2)
