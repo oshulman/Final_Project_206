@@ -138,7 +138,7 @@ def avg_num_healthy_restaurants(cur, conn):
     for tup in num_tup_list:
         total += tup[0]
     
-    return total/50
+    return total/100
 
 def pop_dens_pearson_corr(cur, conn):
     pop_dens_num_tup_list = []
@@ -340,6 +340,28 @@ def pop_corr_graph(cur, conn):
 
     fig.show()
 
+def area_corr_graph(cur, conn):
+
+    cur.execute("SELECT num_of_healthy_place FROM Restaurants")
+    num_of_healthy_tup_list = cur.fetchall()
+
+    num_of_healthy_list = []
+    for tup in num_of_healthy_tup_list:
+        num_of_healthy_list.append(tup[0])
+
+    cur.execute("SELECT area FROM Cities_Data")
+    area_tup_list = cur.fetchall()
+
+    area_list = []
+    for tup in area_tup_list:
+        area_list.append(tup[0])
+
+    df = pd.DataFrame(dict(num_of_healthy_restaurants=num_of_healthy_list, area=area_list))
+
+    fig = px.scatter(df, x="area", y="num_of_healthy_restaurants", title="Area vs Number of Healthy Restaurants in 100 Most Populous US Cities",color_discrete_sequence=px.colors.qualitative.Dark2, trendline="ols")
+
+    fig.show()
+
 
 def main():
     cur, conn = setUpDatabase('cities.db')
@@ -353,6 +375,8 @@ def main():
     area_pearson_corr(cur, conn)
     write_calcs_to_file(cur, conn)
     PopDenCorrelationGraph(cur, conn)
+    pop_corr_graph(cur, conn)
+    area_corr_graph(cur, conn)
     conn.close()
 
 
